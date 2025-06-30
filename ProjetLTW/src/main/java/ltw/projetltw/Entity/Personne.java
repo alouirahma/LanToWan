@@ -17,11 +17,15 @@ public abstract class Personne {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
-    private String nom;
-    private String adresse;
-    private String email;
-    private String telephone;
-@ManyToMany(cascade = CascadeType.ALL)
-    public Set<Mouvement> mouvements;
 
+    private String nom;
+
+    private String adresse;
+
+    private String email;
+
+    private String telephone;
+
+    @ManyToMany(cascade = CascadeType.ALL)
+    public Set<Mouvement> mouvements;
 }

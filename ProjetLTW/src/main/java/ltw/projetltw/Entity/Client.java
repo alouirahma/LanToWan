@@ -12,5 +12,5 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 public class Client extends Personne {
-    String Matricule_fiscaleC;
+    String MatriculeFiscaleC;
 }

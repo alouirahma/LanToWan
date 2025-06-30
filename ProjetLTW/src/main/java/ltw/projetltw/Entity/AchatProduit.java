@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.Date;
 import java.util.List;
 
 @Entity
@@ -17,15 +18,18 @@ public class AchatProduit {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
+
     double quantite;
+
     double prixUnitaire;
+
     double remise;
-    double tva;
 
-@ManyToOne(cascade = CascadeType.ALL)
+    double tax;
+
+    @ManyToOne(cascade = CascadeType.ALL)
     Produit produit;
-@ManyToOne(cascade = CascadeType.ALL)
+
+    @ManyToOne(cascade = CascadeType.ALL)
     Achat achat;
-
-
 }

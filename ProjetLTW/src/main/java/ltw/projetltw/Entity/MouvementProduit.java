@@ -7,6 +7,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.boot.autoconfigure.web.WebProperties;
 
+import java.util.Date;
+
 @Entity
 @Getter
 @Setter
@@ -15,9 +17,17 @@ import org.springframework.boot.autoconfigure.web.WebProperties;
 public class MouvementProduit {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-private int id;
+    private int id;
+
     double quantite;
+
     @ManyToOne(cascade = CascadeType.ALL)
     Produit produit;
+
     @ManyToOne(cascade = CascadeType.ALL)
-    Mouvement mouvement;}
+    Mouvement mouvement;
+
+    Date dateCreation;
+
+    Date dateModification;
+}

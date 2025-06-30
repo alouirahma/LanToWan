@@ -15,10 +15,15 @@ public class VenteProduit {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
+
     double quantite;
+
     double prixUnitaire;
+
     double remise;
-    double tva;
+
+    double tax;
+
     double total;
     @ManyToOne(cascade = CascadeType.ALL)
     Produit produit;

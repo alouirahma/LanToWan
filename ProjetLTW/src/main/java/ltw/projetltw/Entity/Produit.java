@@ -18,16 +18,22 @@ public class Produit {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
     String ref;
+
     String nom;
+
     Double qtePhy;
+
     Double qteTheo;
-    Double prixAchat;
-    Double prixVente;
+
+    Double prixUnitaire;
+
     Boolean comptable;
+
     String numSerie;
+
     CategorieProduit catProd;
+
     String bareCode;
+
     TaxProduit TaxProd;
-
-
 }

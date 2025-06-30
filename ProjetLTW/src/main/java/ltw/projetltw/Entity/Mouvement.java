@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.boot.autoconfigure.web.WebProperties;
 
+import java.util.Date;
 import java.util.Set;
 
 @Entity
@@ -17,10 +18,14 @@ import java.util.Set;
 @NoArgsConstructor
 public class Mouvement {
     @Id
-    @GeneratedValue (strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
     TypeMvmt type;
 
-    @ManyToMany(mappedBy = "mouvements",cascade = CascadeType.ALL)
+    Date dateMvt;
+
+    // reminder to add client to movement if something went wrong
+
+    @ManyToMany(mappedBy = "mouvements", cascade = CascadeType.ALL)
     public Set<Personne> personnes;
 }

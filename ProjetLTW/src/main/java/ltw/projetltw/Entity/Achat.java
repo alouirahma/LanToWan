@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.Date;
 import java.util.Set;
 
 @Entity
@@ -19,8 +20,10 @@ public class Achat {
     private Integer id;
     String facture;
 
-     @ManyToOne(cascade = CascadeType.ALL)
+    @ManyToOne(cascade = CascadeType.ALL)
     Fournisseur fournisseur;
 
+    Date dateCreation;
 
+    Date dateModification;
 }

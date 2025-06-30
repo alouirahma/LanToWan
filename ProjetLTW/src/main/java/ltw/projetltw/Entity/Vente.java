@@ -6,6 +6,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.Date;
+
 @Entity
 @Getter
 @Setter
@@ -15,17 +17,25 @@ public class Vente {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
+
     String numeroVente;
+
     @Column(length = 255)
     String facture;
+
     ModePaiement modePaiment;
     Double montantTotal;
+
     @Column(length = 255)
     String documentPaiement;
-     Boolean dinardTimbre;
 
-     @ManyToOne(cascade = CascadeType.ALL)
+    Boolean dinardTimbre;
+
+    @ManyToOne(cascade = CascadeType.ALL)
     Client client;
 
+    Date dateCreation;
+
+    Date dateModification;
 
 }

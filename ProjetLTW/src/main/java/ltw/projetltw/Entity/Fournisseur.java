@@ -11,7 +11,7 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class Fournisseur extends Personne{
+public class Fournisseur extends Personne {
 
-String Matricule_fiscaleF;
+    String MatriculeFiscaleF;
 }
