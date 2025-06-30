@@ -1,14 +1,12 @@
 package ltw.projetltw.Entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 @Entity
 @Getter
 @Setter
+@With
 @AllArgsConstructor
 @NoArgsConstructor
 public class VenteProduit {
@@ -22,7 +20,7 @@ public class VenteProduit {
 
     double remise;
 
-    double tax;
+    TaxProduit tax;
 
     double total;
     @ManyToOne(cascade = CascadeType.ALL)

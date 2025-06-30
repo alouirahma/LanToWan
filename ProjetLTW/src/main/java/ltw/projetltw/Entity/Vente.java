@@ -1,16 +1,15 @@
 package ltw.projetltw.Entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
-import java.util.Date;
+import java.sql.Blob;
+import java.time.LocalDate;
 
 @Entity
 @Getter
 @Setter
+@With
 @AllArgsConstructor
 @NoArgsConstructor
 public class Vente {
@@ -20,22 +19,22 @@ public class Vente {
 
     String numeroVente;
 
-    @Column(length = 255)
-    String facture;
+    @Lob
+    Blob facture;
 
     ModePaiement modePaiment;
     Double montantTotal;
 
-    @Column(length = 255)
-    String documentPaiement;
+    @Lob
+    Blob documentPaiement;
 
     Boolean dinardTimbre;
 
     @ManyToOne(cascade = CascadeType.ALL)
     Client client;
 
-    Date dateCreation;
+    LocalDate dateCreation;
 
-    Date dateModification;
+    LocalDate dateModification;
 
 }

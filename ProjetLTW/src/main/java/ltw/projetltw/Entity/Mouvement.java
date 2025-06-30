@@ -1,19 +1,15 @@
 package ltw.projetltw.Entity;
 
-
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import org.springframework.boot.autoconfigure.web.WebProperties;
+import lombok.*;
 
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.Set;
 
 @Entity
 @Getter
 @Setter
+@With
 @AllArgsConstructor
 @NoArgsConstructor
 public class Mouvement {
@@ -22,7 +18,7 @@ public class Mouvement {
     private int id;
     TypeMvmt type;
 
-    Date dateMvt;
+    LocalDate dateMvmt;
 
     // reminder to add client to movement if something went wrong
 

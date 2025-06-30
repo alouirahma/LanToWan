@@ -1,14 +1,12 @@
 package ltw.projetltw.Entity;
 
-import jakarta.persistence.Entity;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import jakarta.persistence.*;
+import lombok.*;
 
 @Entity
 @Getter
 @Setter
+@With
 @AllArgsConstructor
 @NoArgsConstructor
 public class Fournisseur extends Personne {

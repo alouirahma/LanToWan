@@ -1,16 +1,12 @@
 package ltw.projetltw.Entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-
-import java.util.Set;
+import lombok.*;
 
 @Entity
 @Getter
 @Setter
+@With
 @NoArgsConstructor
 @AllArgsConstructor
 public class Produit {

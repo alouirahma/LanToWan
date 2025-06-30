@@ -1,17 +1,14 @@
 package ltw.projetltw.Entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import org.springframework.boot.autoconfigure.web.WebProperties;
+import lombok.*;
 
-import java.util.Date;
+import java.time.LocalDate;
 
 @Entity
 @Getter
 @Setter
+@With
 @AllArgsConstructor
 @NoArgsConstructor
 public class MouvementProduit {
@@ -27,7 +24,9 @@ public class MouvementProduit {
     @ManyToOne(cascade = CascadeType.ALL)
     Mouvement mouvement;
 
-    Date dateCreation;
+    @Temporal(TemporalType.TIMESTAMP)
+    LocalDate dateCreation;
 
-    Date dateModification;
+    @Temporal(TemporalType.TIMESTAMP)
+    LocalDate dateModification;
 }

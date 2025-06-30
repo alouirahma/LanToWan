@@ -1,16 +1,14 @@
 package ltw.projetltw.Entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.util.Set;
 
 @Entity
 @Getter
 @Setter
+@With
 @AllArgsConstructor
 @NoArgsConstructor
 public abstract class Personne {
@@ -27,5 +25,5 @@ public abstract class Personne {
     private String telephone;
 
     @ManyToMany(cascade = CascadeType.ALL)
-    public Set<Mouvement> mouvements;
+    public Set<Mouvement> mouvements; // does this have to be a set ?
 }
