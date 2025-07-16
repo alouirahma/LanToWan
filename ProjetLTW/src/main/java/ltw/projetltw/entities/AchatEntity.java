@@ -3,7 +3,11 @@ package ltw.projetltw.entities;
 import jakarta.persistence.*;
 
 import lombok.*;
+import ltw.projetltw.enums.StatutAchat;
+import ltw.projetltw.enums.TypeAchat;
 
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.Where;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -18,34 +22,33 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@EntityListeners(AuditingEntityListener.class)
-@Table(name = "achats")
-public class AchatEntity implements Serializable {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+@SQLDelete(sql = "UPDATE achat SET deleted = true WHERE id = ?")
+@Where(clause = "deleted = false")
+@Table(name = "achat")
+public class AchatEntity extends BaseAuditableEntity {
 
-    @Column(name = "numero_facture", nullable = false, unique = true)
-    String numFacture;
+    @Column(name = "code", nullable = false, unique = true)
+    String code;
 
-    @Column(name = "date_facture", nullable = false)
-    LocalDate dateFacture;
+    @Column(name = "type", nullable = false)
+    TypeAchat type;
 
-    @Column(name = "montant_facture")
-    Double montantFacture;
+    @Column(name = "date", nullable = false)
+    LocalDate date;
 
-    @Lob
-    @Column(name = "facture")
-    byte[] facture;
+    @Column(name = "montant_total")
+    Double montantTotal;
 
-    @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Column(name = "document")
+    String document;
+
+    @Column(name = "statut")
+    StatutAchat statut;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "id_fournisseur", nullable = false)
-    Fournisseur fournisseur;
+    FournisseurEntity fournisseur;
 
-    @CreatedDate
-    @Column(nullable = false, updatable = false)
-    Instant dateCreation;
-
-    @LastModifiedDate
-    Instant dateModification;
+    @Column(name = "notes")
+    String notes;
 }

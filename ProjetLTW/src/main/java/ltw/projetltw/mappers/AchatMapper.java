@@ -17,13 +17,17 @@ public class AchatMapper {
 
         return AchatResponse.builder()
                 .id(entity.getId())
-                .numeroFacture(entity.getNumFacture())
-                .dateFacture(entity.getDateFacture())
-                .montantFacture(entity.getMontantFacture())
-                .facture(entity.getFacture())
-                .idFournisseur(entity.getFournisseur().getId())
-                .fournisseur(entity.getFournisseur().getNom())
-                .matriculeFiscal(entity.getFournisseur().getMatriculeFiscaleF())
+                .code(entity.getCode())
+                .type(entity.getType())
+                .date(entity.getDate())
+                .montantTotal(entity.getMontantTotal())
+                .idDestinateur(entity.getFournisseur().getId())
+                .destinateur(entity.getFournisseur().getNom())
+                .statut(entity.getStatut())
+                .document(entity.getDocument())
+                .notes(entity.getNotes())
+                .dateCreation(entity.getDateCreation())
+                .dateModification(entity.getDateModification())
                 // produits: ignored (will be set by the service layer)
                 .build();
     }
@@ -36,11 +40,13 @@ public class AchatMapper {
 
         return AchatSummaryResponse.builder()
                 .id(entity.getId())
-                .numeroFacture(entity.getNumFacture())
-                .dateFacture(entity.getDateFacture())
-                .montantFacture(entity.getMontantFacture())
-                .fournisseur(entity.getFournisseur().getNom())
-                .matriculeFiscal(entity.getFournisseur().getMatriculeFiscaleF())
+                .code(entity.getCode())
+                .type(entity.getType())
+                .date(entity.getDate())
+                .statut(entity.getStatut())
+                .montantTotal(entity.getMontantTotal())
+                .idDestinateur(entity.getFournisseur().getId())
+                .destinateur(entity.getFournisseur().getNom())
                 .build();
     }
 
@@ -51,26 +57,32 @@ public class AchatMapper {
 
         return AchatEntity.builder()
                 // id: ignored
-                .numFacture(request.getNumFacture())
-                .dateFacture(request.getDateFacture())
-                .montantFacture(request.getMontantFacture())
-                // facture: ignored (will be set by the service layer)
+                .code(request.getCode())
+                .date(request.getDate())
+                .type(request.getType())
+                .montantTotal(request.getMontantTotal())
                 // fournisseur: ignored (will be set by the service using ID)
+                .statut(request.getStatut())
+                // document : ignored (will be set by the service)
+                .notes(request.getNotes())
                 // dateModification: ignored (auto-generated)
                 // dateCreateion: ignored (auto-generated)
                 .build();
     }
 
     // Mapping PurchaseRequest DTO to an existing Purchase entity for updates
-    void updateEntityFromDto(AchatRequest request, AchatEntity entity) {
+    public void updateEntityFromDto(AchatRequest request, AchatEntity entity) {
         if (request == null || entity == null)
             return;
-        // id is ignored (auto-generated)
-        entity.setNumFacture(request.getNumFacture());
-        entity.setDateFacture(request.getDateFacture());
-        entity.setMontantFacture(request.getMontantFacture());
-        // facture: ignored (will be set by the service layer)
+        // id is ignored (cant be updated)
+        entity.setCode(request.getCode());
+        entity.setDate(request.getDate());
+        entity.setType(request.getType());
+        entity.setMontantTotal(request.getMontantTotal());
+        entity.setStatut(request.getStatut());
+        // document is ignore (will be set by the service)
         // fournisseur is ignored (will be set by the service using ID)
+        entity.setNotes(request.getNotes());
         // dateModification is ignored (auto-generated)
         // dateCreateion is ignored (auto-generated)
     }

@@ -1,0 +1,679 @@
+Purchase Module Backend Documentation
+This document describes the backend structure of the Purchase Module, based on the provided Java entity, enum, DTO, repository, service, mapper, and controller files. It outlines the key entities, their attributes, relationships, the enumerations used, the data transfer objects, the service layer logic, the data mapping, and the API endpoints.
+
+1. Overview
+The Purchase Module manages the entire lifecycle of a purchase, from initial requests to final reception and invoicing. It involves entities such as AchatEntity (Purchase), AchatProduitEntity (Purchase Product Line Item), ProduitEntity (Product), FournisseurEntity (Supplier), and Personne (Person). Several enums define the status, type, and tax rates for purchases and products. The module also utilizes Data Transfer Objects (DTOs) for data exchange, a service layer for business logic, mappers for conversion between entities and DTOs, and controllers for exposing RESTful APIs.
+
+2. Entity Relationships Diagram (ERD)
+erDiagram
+    PERSONNE ||--o{ FOURNISSEUR : "inherits"
+    FOURNISSEUR ||--o{ ACHAT : "places"
+    ACHAT ||--o{ ACHAT_PRODUIT : "contains"
+    PRODUIT ||--o{ ACHAT_PRODUIT : "part of"
+
+    PERSONNE {
+        Integer id PK
+        String nom
+        String adresse
+        String email
+        String telephone
+    }
+
+    FOURNISSEUR {
+        Integer id PK
+        String matriculeFiscaleF UNIQUE
+    }
+
+    ACHAT {
+        Integer id PK
+        String code UNIQUE
+        TypeAchat type
+        LocalDate date
+        Double montantTotal
+        String document
+        StatutAchat statut
+        Integer id_fournisseur FK
+        String notes
+        Instant dateCreation
+        Instant dateModification
+    }
+
+    ACHAT_PRODUIT {
+        Integer id PK
+        Double qte
+        Double prixUnitaire
+        Double remise
+        TaxProduit tax
+        Integer id_produit FK
+        Integer id_achat FK
+    }
+
+    PRODUIT {
+        Integer id PK
+        String ref UNIQUE
+        String nom
+        Double qtePhy
+        Double qteTheo
+        Double qteCourante
+        Double prixUnitaire
+        TaxProduit tax
+        Boolean comptable
+        String numSerie
+        String bareCode
+    }
+
+    StatutAchat {
+        BROUILLON
+        VALIDE
+        APPROUVE
+        COMMANDE
+        PARTIELLEMENT_RECU
+        RECU
+        ANNULE
+        REFUSE
+    }
+
+    TypeAchat {
+        DEMANDE_DE_PRIX
+        COMMANDE
+        BON_DE_RECEPTION
+        RENVOI_DE_MARCHANDISES
+        FACTURE
+    }
+
+    TaxProduit {
+        TAX_19
+        TAX_7
+        TAX_0
+    }
+
+3. Entities Description
+3.1. Personne (Abstract Entity)
+Represents a generic person, serving as a base for other entities like FournisseurEntity.
+
+Attributes:
+
+id (Integer): Primary key, auto-generated.
+
+nom (String): Name of the person (non-nullable).
+
+adresse (String): Address of the person.
+
+email (String): Email address of the person.
+
+telephone (String): Phone number of the person.
+
+3.2. FournisseurEntity (Supplier)
+Represents a supplier, inheriting from Personne.
+
+Attributes:
+
+id (Integer): Primary key (inherited from Personne).
+
+matriculeFiscaleF (String): Fiscal registration number of the supplier (unique).
+
+3.3. ProduitEntity (Product)
+Represents a product that can be purchased.
+
+Attributes:
+
+id (Integer): Primary key, auto-generated.
+
+ref (String): Product reference (non-nullable, unique).
+
+nom (String): Product name (non-nullable).
+
+qtePhy (Double): Physical quantity of the product.
+
+qteTheo (Double): Theoretical quantity of the product.
+
+qteCourante (Double): Current quantity of the product.
+
+prixUnitaire (Double): Unit price of the product (non-nullable).
+
+tax (TaxProduit): Tax rate applicable to the product (non-nullable).
+
+comptable (Boolean): Indicates if the product is accountable (non-nullable).
+
+numSerie (String): Serial number of the product.
+
+bareCode (String): Barcode of the product.
+
+3.4. AchatEntity (Purchase)
+Represents a purchase document, such as a purchase order or invoice.
+
+Attributes:
+
+id (Integer): Primary key, auto-generated.
+
+code (String): Unique code for the purchase document (non-nullable, unique).
+
+type (TypeAchat): Type of purchase document (e.g., COMMANDE, FACTURE) (non-nullable).
+
+date (LocalDate): Date of the purchase document (non-nullable).
+
+montantTotal (Double): Total amount of the purchase.
+
+document (String): Path or reference to an external document.
+
+statut (StatutAchat): Current status of the purchase (e.g., BROUILLON, VALIDE).
+
+fournisseur (FournisseurEntity): Many-to-one relationship with FournisseurEntity, indicating the supplier for this purchase (non-nullable).
+
+notes (String): Additional notes for the purchase.
+
+dateCreation (Instant): Timestamp of creation (non-nullable, non-updatable).
+
+dateModification (Instant): Timestamp of last modification.
+
+3.5. AchatProduitEntity (Purchase Product Line Item)
+Represents a specific product line item within a purchase. This entity links a product to a purchase and specifies the quantity, price, and tax for that particular item in the purchase.
+
+Attributes:
+
+id (Integer): Primary key, auto-generated.
+
+qte (Double): Quantity of the product in this purchase line item (non-nullable).
+
+prixUnitaire (Double): Unit price of the product for this specific purchase (non-nullable).
+
+remise (Double): Discount applied to this product line item.
+
+tax (TaxProduit): Tax rate applied to this product line item.
+
+produit (ProduitEntity): Many-to-one relationship with ProduitEntity, indicating the product being purchased (non-nullable).
+
+achat (AchatEntity): Many-to-one relationship with AchatEntity, linking to the parent purchase document (non-nullable).
+
+4. Enumerations
+4.1. StatutAchat (Purchase Status)
+Defines the possible statuses for a purchase document.
+
+BROUILLON: Draft status.
+
+VALIDE: Validated.
+
+APPROUVE: Approved.
+
+COMMANDE: Ordered.
+
+PARTIELLEMENT_RECU: Partially received.
+
+RECU: Fully received.
+
+ANNULE: Canceled.
+
+REFUSE: Rejected.
+
+4.2. TypeAchat (Purchase Type)
+Defines the different types of purchase documents.
+
+DEMANDE_DE_PRIX: Price Request.
+
+COMMANDE: Purchase Order.
+
+BON_DE_RECEPTION: Goods Receipt Note.
+
+RENVOI_DE_MARCHANDISES: Goods Return.
+
+FACTURE: Invoice.
+
+4.3. TaxProduit (Product Tax)
+Defines the different tax rates applicable to products.
+
+TAX_19: 19% tax.
+
+TAX_7: 7% tax.
+
+TAX_0: 0% tax.
+
+5. Data Transfer Objects (DTOs)
+DTOs are used to transfer data between different layers of the application, often between the client and the server, or between service and controller layers.
+
+5.1. Request DTOs
+These DTOs are used for incoming data, typically from client requests, and include validation annotations.
+
+5.1.1. AchatRequest
+Used for creating or updating AchatEntity instances.
+
+code (String): Unique code for the purchase (required).
+
+type (TypeAchat): Type of purchase (required).
+
+date (LocalDate): Date of the purchase.
+
+idDestinateur (Integer): ID of the supplier (required).
+
+produits (List<AchatProduitRequest>): List of product line items associated with the purchase.
+
+montantTotal (Double): Total amount (must be non-negative).
+
+statut (StatutAchat): Status of the purchase.
+
+deleteDocument (Boolean): Flag to indicate if the associated document should be deleted.
+
+notes (String): Additional notes.
+
+5.1.2. AchatProduitRequest
+Used for creating or updating AchatProduitEntity instances within an AchatRequest.
+
+id (Integer): ID of the purchase product line (optional, for updates).
+
+quantite (Double): Quantity of the product (required, non-negative).
+
+prixUnitaire (Double): Unit price of the product (required, non-negative).
+
+tax (TaxProduit): Tax rate (required).
+
+remise (Double): Discount (non-negative).
+
+idProduit (Integer): ID of the product (required).
+
+5.1.3. FournisseurRequest
+Used for creating or updating FournisseurEntity instances.
+
+nom (String): Supplier name (required).
+
+adresse (String): Supplier address.
+
+email (String): Supplier email (must be a valid email format).
+
+telephone (String): Supplier phone number (must be 8 digits for Tunisian numbers).
+
+matriculeFiscale (String): Fiscal registration number (required).
+
+5.1.4. ProduitRequest
+Used for creating or updating ProduitEntity instances.
+
+id (Integer): ID of the product (optional, for updates).
+
+ref (String): Product reference (required).
+
+nom (String): Product name (required).
+
+qteCourante (Double): Current quantity (non-negative).
+
+prixUnitaire (Double): Unit price (non-negative).
+
+tax (TaxProduit): Tax rate (required).
+
+comptable (Boolean): Accountable status.
+
+numSerie (String): Serial number.
+
+bareCode (String): Barcode.
+
+5.2. Response DTOs
+These DTOs are used for outgoing data, typically as responses to client requests.
+
+5.2.1. AchatResponse
+Provides a detailed view of an AchatEntity, including its associated product lines.
+
+id (Integer): Purchase ID.
+
+code (String): Purchase code.
+
+type (TypeAchat): Purchase type.
+
+date (LocalDate): Purchase date.
+
+montantTotal (Double): Total amount.
+
+statut (StatutAchat): Purchase status.
+
+document (String): Path to the associated document.
+
+produits (Set<AchatProduitResponse>): Set of associated product line items.
+
+idDestinateur (Integer): Supplier ID.
+
+destinateur (String): Supplier name.
+
+notes (String): Notes.
+
+dateCreation (Instant): Creation timestamp.
+
+dateModification (Instant): Last modification timestamp.
+
+5.2.2. AchatSummaryResponse
+Provides a summarized view of an AchatEntity, typically for listing purposes.
+
+id (Integer): Purchase ID.
+
+code (String): Purchase code.
+
+type (TypeAchat): Purchase type.
+
+date (LocalDate): Purchase date.
+
+montantTotal (Double): Total amount.
+
+idDestinateur (Integer): Supplier ID.
+
+destinateur (String): Supplier name.
+
+statut (StatutAchat): Purchase status.
+
+5.2.3. AchatProduitResponse
+Provides details for a single product line item within a purchase.
+
+id (Integer): Purchase product line ID.
+
+quantite (Double): Quantity.
+
+prixUnitaire (Double): Unit price.
+
+tax (TaxProduit): Tax rate.
+
+remise (Double): Discount.
+
+reference (String): Product reference.
+
+produit (String): Product name.
+
+5.2.4. FournisseurResponse
+Provides details for a FournisseurEntity.
+
+id (Integer): Supplier ID.
+
+nom (String): Supplier name.
+
+adresse (String): Supplier address.
+
+email (String): Supplier email.
+
+telephone (String): Supplier phone number.
+
+matriculeFiscale (String): Fiscal registration number.
+
+6. Repositories
+Repositories are interfaces that extend Spring Data JPA's JpaRepository, providing methods for CRUD operations and custom queries.
+
+6.1. AchatRepository
+findAllSummary(): Retrieves a list of AchatSummaryResponse objects, joining AchatEntity with FournisseurEntity to include supplier details.
+
+findByCode(String code): Finds an AchatEntity by its unique code.
+
+6.2. AchatProduitRepository
+findByAchatId(Integer id): Retrieves all AchatProduitEntity instances associated with a given AchatEntity ID.
+
+existsByProduitId(Integer id): Checks if any AchatProduitEntity exists for a given ProduitEntity ID.
+
+6.3. FournisseurRepository
+findByMatriculeFiscaleF(String matriculeFiscale): Finds a FournisseurEntity by its fiscal registration number.
+
+6.4. ProduitRepository
+findByNom(String nom): Finds products by name.
+
+findByRef(String reference): Finds a product by its unique reference.
+
+findByBareCode(String bareCode): Finds a product by its barcode.
+
+findByNumSerie(String numeroDeSerie): Finds a product by its serial number.
+
+7. Services
+Services encapsulate the business logic and orchestrate operations between repositories and DTOs. They are typically annotated with @Service and use @Transactional for transaction management.
+
+7.1. AchatService
+Manages business logic related to AchatEntity.
+
+getAllAchatEntities(): Fetches a summarized list of all purchases.
+
+getAchatResponseById(Integer id): Retrieves a detailed AchatResponse for a given purchase ID, including all associated product lines.
+
+getAchatEntityById(Integer id): Retrieves an AchatEntity by ID (for internal service use).
+
+createAchatEntity(AchatRequest request, MultipartFile documentFile): Creates a new purchase, handles supplier association, document upload, and creates associated product lines.
+
+updateAchatEntity(Integer id, AchatRequest request, MultipartFile documentFile): Updates an existing purchase, handles supplier changes, document updates/deletions, and updates associated product lines by deleting old ones and creating new ones.
+
+deleteAchatEntity(Integer id): Deletes a purchase, including its associated document and all product lines.
+
+saveDocument(MultipartFile file, AchatEntity entity): Private helper method to save a document to a structured directory based on year, supplier name, and month.
+
+deleteDocument(String documentPath): Private helper method to delete a document from the file system.
+
+7.2. AchatProduitService
+Manages business logic related to AchatProduitEntity.
+
+getAllAchatProduitEntities(Integer idAchat): Retrieves all product lines for a specific purchase.
+
+getAchatProduitEntityById(Integer id): Retrieves a product line by ID (for internal service use).
+
+createAchatProduitEntity(AchatProduitRequest request, Integer idProduit, Integer idAchat): Creates a single product line, associating it with a product and a purchase.
+
+createAchatProduitEntities(List<AchatProduitRequest> request, AchatEntity achatEntity): Creates multiple product lines for a given purchase.
+
+updateAchatProduitEntity(Integer id, AchatProduitRequest request, Integer idProduit, Integer idAchat): Updates an existing product line.
+
+updateAchatProduitEntities(AchatProduitRequest request, AchatEntity achatEntity): Placeholder/stub for updating multiple product lines (currently empty in provided code).
+
+deleteAchatProduitEntity(Integer id): Deletes a product line.
+
+verifyPurchaseEntity(Integer idAchat): Helper method to verify if a purchase entity exists.
+
+verifyProductEntity(Integer idProduit): Helper method to verify if a product entity exists.
+
+7.3. FournisseurService
+Manages business logic related to FournisseurEntity.
+
+getAllFournisseurs(): Retrieves a list of all suppliers.
+
+getFournisseurById(Integer id): Retrieves a supplier entity by ID.
+
+createFournisseur(FournisseurEntity request): Creates a new supplier.
+
+updateFournisseur(Integer id, FournisseurEntity request): Updates an existing supplier.
+
+deleteFournisseur(Integer id): Deletes a supplier.
+
+7.4. ProduitService
+Manages business logic related to ProduitEntity.
+
+getAllProduitEntities(): Retrieves a list of all products.
+
+getProduitEntityById(Integer id): Retrieves a product entity by ID.
+
+createProduitEntity(ProduitRequest request): Creates a new product.
+
+updateProduitEntity(Integer id, ProduitRequest request): Updates an existing product.
+
+deleteProduitEntity(Integer id): Deletes a product, with a check to ensure it's not part of any existing purchase product lines.
+
+8. Mappers
+Mappers are Spring @Component classes responsible for converting between Entity objects and DTOs (Data Transfer Objects). They ensure a clean separation of concerns and prevent direct exposure of entity models to the API layer.
+
+8.1. AchatMapper
+Handles mapping between AchatEntity, AchatRequest, AchatResponse, and AchatSummaryResponse.
+
+toDto(AchatEntity entity): Converts an AchatEntity to a detailed AchatResponse DTO.
+
+toSummaryDto(AchatEntity entity): Converts an AchatEntity to a summarized AchatSummaryResponse DTO.
+
+toEntity(AchatRequest request): Converts an AchatRequest DTO to an AchatEntity for creation.
+
+updateEntityFromDto(AchatRequest request, AchatEntity entity): Updates an existing AchatEntity with data from an AchatRequest DTO.
+
+8.2. AchatProduitMapper
+Handles mapping between AchatProduitEntity, AchatProduitRequest, and AchatProduitResponse.
+
+toDto(AchatProduitEntity entity): Converts an AchatProduitEntity to an AchatProduitResponse DTO.
+
+toEntity(AchatProduitRequest request): Converts an AchatProduitRequest DTO to an AchatProduitEntity for creation.
+
+updateEntityFromDto(AchatProduitRequest request, AchatProduitEntity entity): Updates an existing AchatProduitEntity with data from an AchatProduitRequest DTO.
+
+8.3. FournisseurMapper
+Handles mapping between FournisseurEntity, FournisseurRequest, and FournisseurResponse.
+
+toDto(FournisseurEntity entity): Converts a FournisseurEntity to a FournisseurResponse DTO.
+
+toEntity(FournisseurRequest request): Converts a FournisseurRequest DTO to a FournisseurEntity for creation.
+
+updateEntityFromDto(FournisseurRequest request, FournisseurEntity entity): Updates an existing FournisseurEntity with data from a FournisseurRequest DTO.
+
+8.4. ProduitMapper
+Handles mapping between ProduitEntity, ProduitRequest, and ProduitResponse.
+
+toDto(ProduitEntity entity): Converts a ProduitEntity to a ProduitResponse DTO.
+
+toEntity(ProduitRequest request): Converts a ProduitRequest DTO to a ProduitEntity for creation.
+
+updateEntityFromDto(ProduitRequest request, ProduitEntity entity): Updates an existing ProduitEntity with data from a ProduitRequest DTO.
+
+9. Controllers
+Controllers are RESTful endpoints that expose the module's functionality to external clients. They handle incoming HTTP requests, delegate to the service layer for business logic, and return appropriate HTTP responses.
+
+9.1. AchatController
+Handles API requests related to purchases. Base URL: /api/achats
+
+GET /api/achats:
+
+Description: Retrieves a summarized list of all purchases.
+
+Returns: ResponseEntity<List<AchatSummaryResponse>> (HTTP 200 OK)
+
+GET /api/achats/{id}:
+
+Description: Retrieves a detailed purchase by its ID, including associated product lines.
+
+Path Variable: id (Integer) - The ID of the purchase.
+
+Returns: ResponseEntity<AchatResponse> (HTTP 200 OK)
+
+POST /api/achats (consumes multipart/form-data):
+
+Description: Creates a new purchase. Supports optional document upload.
+
+Request Parts:
+
+achat (AchatRequest): JSON payload for the purchase details (validated).
+
+document (MultipartFile, optional): The document file to upload.
+
+Returns: ResponseEntity<AchatSummaryResponse> (HTTP 201 Created)
+
+PUT /api/achats/{id} (consumes multipart/form-data):
+
+Description: Updates an existing purchase. Supports optional document upload or deletion.
+
+Path Variable: id (Integer) - The ID of the purchase to update.
+
+Request Parts:
+
+achat (AchatRequest): JSON payload for the updated purchase details (validated).
+
+document (MultipartFile, optional): The new document file to upload. If deleteDocument in AchatRequest is true and no new document is provided, the existing document will be deleted.
+
+Returns: ResponseEntity<AchatSummaryResponse> (HTTP 200 OK)
+
+DELETE /api/achats/{id}:
+
+Description: Deletes a purchase by its ID, including its associated document and all product lines.
+
+Path Variable: id (Integer) - The ID of the purchase to delete.
+
+Returns: ResponseEntity<Void> (HTTP 204 No Content)
+
+9.2. FournisseurController
+Handles API requests related to suppliers. Base URL: /api/fournisseurs
+
+GET /api/fournisseurs:
+
+Description: Retrieves a list of all suppliers.
+
+Returns: ResponseEntity<List<FournisseurEntity>> (HTTP 200 OK)
+
+GET /api/fournisseurs/{id}:
+
+Description: Retrieves a supplier by its ID.
+
+Path Variable: id (Integer) - The ID of the supplier.
+
+Returns: ResponseEntity<FournisseurEntity> (HTTP 200 OK)
+
+POST /api/fournisseurs:
+
+Description: Creates a new supplier.
+
+Request Part: fournisseur (FournisseurEntity): JSON payload for the supplier details (validated).
+
+Returns: ResponseEntity<FournisseurEntity> (HTTP 201 Created)
+
+PUT /api/fournisseurs/{id}:
+
+Description: Updates an existing supplier.
+
+Path Variable: id (Integer) - The ID of the supplier to update.
+
+Request Part: fournisseur (FournisseurEntity): JSON payload for the updated supplier details (validated).
+
+Returns: ResponseEntity<FournisseurEntity> (HTTP 200 OK)
+
+DELETE /api/fournisseurs/{id}:
+
+Description: Deletes a supplier by its ID.
+
+Path Variable: id (Integer) - The ID of the supplier to delete.
+
+Returns: ResponseEntity<Void> (HTTP 204 No Content)
+
+9.3. ProduitController
+Handles API requests related to products. Base URL: /api/produits
+
+GET /api/produits:
+
+Description: Retrieves a list of all products.
+
+Returns: ResponseEntity<List<ProduitEntity>> (HTTP 200 OK)
+
+GET /api/produits/{id}:
+
+Description: Retrieves a product by its ID.
+
+Path Variable: id (Integer) - The ID of the product.
+
+Returns: ResponseEntity<ProduitEntity> (HTTP 200 OK)
+
+POST /api/produits:
+
+Description: Creates a new product.
+
+Request Part: produit (ProduitRequest): JSON payload for the product details (validated).
+
+Returns: ResponseEntity<ProduitEntity> (HTTP 201 Created)
+
+PUT /api/produits/{id}:
+
+Description: Updates an existing product.
+
+Path Variable: id (Integer) - The ID of the product to update.
+
+Request Part: produit (ProduitRequest): JSON payload for the updated product details (validated).
+
+Returns: ResponseEntity<ProduitEntity> (HTTP 200 OK)
+
+DELETE /api/produits/{id}:
+
+Description: Deletes a product by its ID.
+
+Path Variable: id (Integer) - The ID of the product to delete.
+
+Returns: ResponseEntity<Void> (HTTP 204 No Content)
+
+10. Key Relationships and Business Logic
+Purchase Document Flow: An AchatEntity progresses through various StatutAchat values, reflecting its lifecycle (e.g., BROUILLON -> VALIDE -> COMMANDE -> RECU).
+
+Line Items: Each AchatEntity can have multiple AchatProduitEntity entries, detailing the specific products, quantities, and prices involved in that purchase. The AchatService handles the creation and deletion of these line items during purchase creation and updates.
+
+Supplier Association: Every AchatEntity is associated with a FournisseurEntity, ensuring that each purchase is linked to a specific supplier.
+
+Product Details: AchatProduitEntity links to ProduitEntity to retrieve product-specific information like name, reference, and default tax, which can then be overridden or confirmed at the line item level.
+
+Inheritance: FournisseurEntity extends Personne, promoting code reusability and a clear hierarchy for contact information.
+
+Document Management: The AchatService includes functionality for saving and deleting associated documents, organizing them by year, supplier, and month.
+
+Data Validation: Request DTOs and entities utilize jakarta.validation.constraints annotations to ensure data integrity at the API entry point and before persistence.
+
+Layered Architecture: The module follows a clear layered architecture (Controller -> Service -> Repository -> Entity), promoting maintainability, testability, and separation of concerns. Mappers facilitate data conversion between layers.

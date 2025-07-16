@@ -1,0 +1,341 @@
+# Purchase Module Documentation
+
+## Overview
+
+The Purchase Module is a comprehensive Spring Boot application that manages purchasing operations, supplier relationships, and product inventory. It follows a clean layered architecture with proper separation of concerns and implements modern Spring Boot best practices.
+
+## Architecture Overview
+
+The module follows a typical Spring Boot layered architecture:
+
+```
+Controllers → Services → Repositories → Entities
+     ↓           ↓           ↓          ↓
+   DTOs ←→ Mappers ←→ Business Logic ←→ Database
+```
+
+### Key Components:
+- **Entities**: JPA entities representing database tables
+- **Repositories**: Spring Data JPA repositories for data access
+- **DTOs**: Data Transfer Objects for API requests/responses
+- **Mappers**: Convert between entities and DTOs
+- **Services**: Business logic layer with transaction management
+- **Controllers**: REST API endpoints (not provided but implied)
+
+## Core Entities
+
+### 1. AchatEntity (Purchase)
+**Purpose**: Represents a purchase transaction
+
+**Key Fields**:
+- `id`: Primary key (auto-generated)
+- `code`: Unique purchase code
+- `type`: Purchase type (enum: TypeAchat)
+- `date`: Purchase date
+- `montantTotal`: Total amount
+- `document`: File path to associated document
+- `statut`: Purchase status (enum: StatutAchat)
+- `fournisseur`: Many-to-one relationship with supplier
+- `notes`: Additional notes
+- `dateCreation/dateModification`: Audit fields
+
+**Features**:
+- Auditing enabled with `@EntityListeners(AuditingEntityListener.class)`
+- Automatic timestamp management
+- Document file association
+
+### 2. AchatProduitEntity (Purchase Line Item)
+**Purpose**: Represents individual products within a purchase
+
+**Key Fields**:
+- `id`: Primary key
+- `qte`: Quantity purchased
+- `prixUnitaire`: Unit price
+- `remise`: Discount amount
+- `tax`: Tax rate (enum: TaxProduit)
+- `produit`: Many-to-one relationship with product
+- `achat`: Many-to-one relationship with purchase
+
+**Features**:
+- Links purchases to products with quantities and pricing
+- Supports discounts and tax calculations
+- Cascade operations configured
+
+### 3. FournisseurEntity (Supplier)
+**Purpose**: Represents suppliers/vendors
+
+**Key Fields**:
+- Extends `Personne` base class
+- `matriculeFiscaleF`: Unique fiscal registration number
+- Inherits common fields (nom, adresse, email, telephone) from base class
+
+**Features**:
+- Unique fiscal identification
+- Inheritance from base person entity
+
+### 4. ProduitEntity (Product)
+**Purpose**: Represents products in inventory
+
+**Key Fields**:
+- `id`: Primary key
+- `ref`: Unique product reference
+- `nom`: Product name
+- `qtePhy/qteTheo/qteCourante`: Physical/theoretical/current quantities
+- `prixUnitaire`: Unit price
+- `tax`: Tax classification
+- `comptable`: Accounting flag
+- `numSerie`: Serial number
+- `bareCode`: Barcode
+
+**Features**:
+- Multiple quantity tracking (physical, theoretical, current)
+- Barcode and serial number support
+- Tax classification system
+
+## Data Transfer Objects (DTOs)
+
+### Request DTOs
+- **AchatRequest**: Purchase creation/update data
+- **AchatProduitRequest**: Purchase line item data
+- **FournisseurRequest**: Supplier data
+- **ProduitRequest**: Product data
+
+**Validation Features**:
+- Bean validation annotations (`@NotNull`, `@NotBlank`, `@Min`, `@Email`, `@Pattern`)
+- Custom validation messages
+- Proper field constraints
+
+### Response DTOs
+- **AchatResponse**: Complete purchase details with products
+- **AchatSummaryResponse**: Simplified purchase list view
+- **AchatProduitResponse**: Purchase line item details
+- **FournisseurResponse**: Supplier information
+
+## Repository Layer
+
+### Spring Data JPA Repositories
+
+**AchatRepository**:
+- Custom query for purchase summaries with supplier info
+- Find by purchase code
+- Leverages JPQL for complex queries
+
+**AchatProduitRepository**:
+- Find purchase lines by purchase ID
+- Check product usage in purchases
+
+**FournisseurRepository**:
+- Find supplier by fiscal registration number
+
+**ProduitRepository**:
+- Multiple search methods (by name, reference, barcode, serial number)
+- Flexible product lookup capabilities
+
+## Service Layer
+
+### AchatService (Purchase Service)
+**Core Responsibilities**:
+- Purchase CRUD operations
+- Document management (upload, storage, deletion)
+- Purchase line item coordination
+- Supplier validation
+
+**Key Features**:
+- **Document Management**: 
+  - Organized storage by year/supplier/month
+  - Automatic directory creation
+  - File cleanup on deletion
+- **Transaction Management**: All operations are transactional
+- **Cascade Operations**: Handles related purchase lines
+- **Validation**: Supplier existence validation
+
+**Document Storage Structure**:
+```
+/storage/
+  └── {year}/
+      └── {supplier_name}/
+          └── {month}/
+              └── {document_files}
+```
+
+### AchatProduitService (Purchase Line Service)
+**Core Responsibilities**:
+- Purchase line item CRUD operations
+- Product and purchase validation
+- Batch operations for multiple lines
+
+**Key Features**:
+- Entity validation for products and purchases
+- Batch creation and updates
+- Proper error handling with custom exceptions
+
+### FournisseurService (Supplier Service)
+**Core Responsibilities**:
+- Supplier CRUD operations
+- Basic entity management
+
+**Key Features**:
+- Simple CRUD operations
+- Transaction management
+- Error handling
+
+### ProduitService (Product Service)
+**Core Responsibilities**:
+- Product CRUD operations
+- Usage validation before deletion
+
+**Key Features**:
+- Prevents deletion of products in use
+- Full CRUD operations
+- Proper validation
+
+## Mapper Layer
+
+### Purpose
+Mappers handle conversion between entities and DTOs, ensuring clean separation between internal models and API contracts.
+
+### Key Mappers:
+- **AchatMapper**: Purchase entity ↔ DTO conversion
+- **AchatProduitMapper**: Purchase line entity ↔ DTO conversion  
+- **FournisseurMapper**: Supplier entity ↔ DTO conversion
+- **ProduitMapper**: Product entity ↔ DTO conversion
+
+### Mapper Features:
+- **Null-safe operations**: All mappers handle null inputs
+- **Partial updates**: Support for updating existing entities
+- **Flexible mapping**: Different mapping methods for different scenarios
+- **Builder pattern**: Leverages Lombok builders for clean object creation
+
+## Technical Implementation Details
+
+### Dependencies Used:
+- **Spring Boot**: Core framework
+- **Spring Data JPA**: Data access layer
+- **Hibernate**: ORM implementation
+- **Lombok**: Reduces boilerplate code
+- **Bean Validation**: Request validation
+- **SLF4J**: Logging framework
+
+### Key Annotations:
+- `@Entity`: JPA entity marking
+- `@Service`: Service layer components
+- `@Repository`: Data access layer
+- `@Transactional`: Transaction management
+- `@Builder`: Lombok builder pattern
+- `@RequiredArgsConstructor`: Lombok dependency injection
+
+### Configuration:
+- **Auditing**: Automatic timestamp management
+- **Validation**: Bean validation for DTOs
+- **Logging**: SLF4J with different log levels
+- **File Storage**: Configurable document storage path
+
+## Business Logic Flows
+
+### Purchase Creation Flow:
+1. Validate request data
+2. Convert DTO to entity
+3. Validate and set supplier
+4. Handle document upload (if provided)
+5. Save purchase entity
+6. Create associated purchase lines
+7. Return success response
+
+### Purchase Update Flow:
+1. Retrieve existing purchase
+2. Update basic purchase data
+3. Handle supplier changes
+4. Handle document updates/deletions
+5. Delete existing purchase lines
+6. Create new purchase lines
+7. Save updated entity
+
+### Document Management:
+1. Create organized directory structure
+2. Save file with original name
+3. Store file path in database
+4. Handle cleanup on updates/deletions
+
+## Error Handling
+
+### Custom Exceptions:
+- **ResourceNotFoundException**: Entity not found scenarios
+- Proper HTTP status mapping
+- Detailed error messages
+
+### Validation:
+- Bean validation at DTO level
+- Business rule validation in services
+- Database constraint validation
+
+## Security Considerations
+
+### Data Validation:
+- Input validation at multiple layers
+- SQL injection prevention through JPA
+- File upload security (path traversal prevention)
+
+### Transaction Management:
+- Proper transaction boundaries
+- Rollback on failures
+- Data consistency guarantees
+
+## Performance Considerations
+
+### Database Optimization:
+- Lazy loading for relationships
+- Indexed columns (unique constraints)
+- Efficient queries with JPQL
+
+### Caching:
+- Transaction-scoped caching
+- Repository-level optimizations
+
+## API Design Patterns
+
+### REST Conventions:
+- Resource-based URLs
+- HTTP method semantics
+- Proper status codes
+- Consistent response formats
+
+### DTO Patterns:
+- Request/Response separation
+- Validation at boundaries
+- Clean API contracts
+
+## Extension Points
+
+### Adding New Features:
+1. **New Entity**: Create entity, repository, DTO, mapper, service
+2. **New Business Logic**: Extend existing services
+3. **New Validations**: Add to DTOs or services
+4. **New Queries**: Extend repositories
+
+### Customization Areas:
+- Document storage strategy
+- Validation rules
+- Business workflows
+- Audit requirements
+
+## Maintenance Notes
+
+### Code Quality:
+- Consistent logging patterns
+- Proper exception handling
+- Transaction management
+- Clean separation of concerns
+
+### Testing Considerations:
+- Service layer unit tests
+- Repository integration tests
+- DTO validation tests
+- Mapper conversion tests
+
+### Deployment Notes:
+- Configure document storage path
+- Database setup required
+- File system permissions
+- Logging configuration
+
+This architecture provides a solid foundation for a purchase management system with room for extension and customization based on specific business requirements.

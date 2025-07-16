@@ -1,3 +1,4 @@
+import { createServerFileRoute } from '@tanstack/react-start/server'
 import { transports } from '@/utils/demo.sse'
 
 export const ServerRoute = createServerFileRoute('/api/messages').methods({

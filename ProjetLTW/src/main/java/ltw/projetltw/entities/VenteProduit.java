@@ -1,9 +1,8 @@
 package ltw.projetltw.entities;
 
-import ltw.projetltw.enums.TaxProduit;
-
 import jakarta.persistence.*;
 import lombok.*;
+import ltw.projetltw.enums.TaxProduit;
 
 @Entity
 @Getter
@@ -27,7 +26,7 @@ public class VenteProduit {
     TaxProduit tax;
 
     @ManyToOne(cascade = CascadeType.ALL)
-    Produit produit;
+    ProduitEntity produit;
     
     @ManyToOne(cascade = CascadeType.ALL)
     Vente vente;

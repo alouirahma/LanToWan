@@ -12,8 +12,8 @@ import lombok.AllArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class FournisseurRequest {
-	// Fields inherited from Personne
-    @NotBlank(message = "Name is required")
+
+    @NotBlank(message = "Name cannot be empty")
     private String nom;
 
     private String adresse;
@@ -24,7 +24,6 @@ public class FournisseurRequest {
     @Pattern(regexp = "^[0-9]{8}$", message = "Phone number must be 8 digits") // Example pattern for Tunisian numbers
     private String telephone;
 
-    // Specific to Fournisseur
-    @NotBlank(message = "Matricule Fiscale is required")
-    private String matriculeFiscaleF;
+    @NotBlank(message = "Matricule Fiscale cannot be empty")
+    private String matriculeFiscale;
 }

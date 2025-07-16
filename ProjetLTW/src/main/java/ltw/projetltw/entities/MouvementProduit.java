@@ -25,7 +25,7 @@ public class MouvementProduit implements Serializable {
     Double quantite;
 
     @ManyToOne(cascade = CascadeType.ALL)
-    Produit produit;
+    ProduitEntity produit;
 
     @ManyToOne(cascade = CascadeType.ALL)
     Mouvement mouvement;

@@ -1,9 +1,8 @@
 package ltw.projetltw.entities;
 
-import ltw.projetltw.enums.TypeMvmt;
-
 import jakarta.persistence.*;
 import lombok.*;
+import ltw.projetltw.enums.TypeMvmt;
 
 import java.io.Serializable;
 import java.time.LocalDate;

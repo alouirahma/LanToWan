@@ -2,6 +2,8 @@
 package ltw.projetltw.dtos.responses;
 
 import lombok.*;
+import ltw.projetltw.enums.StatutAchat;
+import ltw.projetltw.enums.TypeAchat;
 
 import java.time.LocalDate;
 
@@ -13,11 +15,14 @@ import java.time.LocalDate;
 public class AchatSummaryResponse {
 
     private Integer id;
-    private String numeroFacture;
-    private LocalDate dateFacture;
-    private Double montantFacture;
+    private String code;
+    private TypeAchat type;
+    private LocalDate date;
+    private Double montantTotal;
 
-    private String fournisseur;
-    private String matriculeFiscal;
+    private Integer idDestinateur;
+    private String destinateur;
+
+    private StatutAchat statut;
 
 }

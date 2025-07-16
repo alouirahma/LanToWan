@@ -1,0 +1,10 @@
+{
+    "BROUILLON": "Brouillon",
+    "VALIDE": "Validé",
+    "APPROUVE": "Approuvé",
+    "COMMANDE": "Commandé",
+    "PARTIELLEMENT_RECU": "Partiellement reçu",
+    "RECU": "Reçu",
+    "ANNULE": "Annulé",
+    "REFUSE": "Refusé"
+}

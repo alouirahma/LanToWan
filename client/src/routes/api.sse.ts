@@ -1,3 +1,4 @@
+import { createServerFileRoute } from '@tanstack/react-start/server'
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js'
 
 import { transports, server } from '@/utils/demo.sse'

@@ -14,5 +14,5 @@ public class FournisseurResponse {
 	String adresse;
 	String email;
 	String telephone;
-	String matriculeFiscaleF;
+	String matriculeFiscale;
 }

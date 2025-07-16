@@ -2,27 +2,28 @@ package ltw.projetltw.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 import java.io.Serializable;
-import java.util.Set;
 
-@Entity
+@MappedSuperclass
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Inheritance(strategy = InheritanceType.JOINED) // Defines the inheritance strategy
-@Table(name = "personnes")
-public abstract class Personne implements Serializable {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+@SuperBuilder
+public abstract class Personne extends BaseEntity {
 
+    @Column(name = "nom", nullable = false)
     private String nom;
 
+    @Column(name = "adresse")
     private String adresse;
 
+    @Column(name = "email")
     private String email;
 
+    @Column(name = "telephone")
     private String telephone;
+
 }

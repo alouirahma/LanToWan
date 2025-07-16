@@ -1,9 +1,9 @@
 package ltw.projetltw.entities;
 
-import ltw.projetltw.enums.ModePaiement;
-
 import jakarta.persistence.*;
 import lombok.*;
+import ltw.projetltw.enums.ModePaiement;
+
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;

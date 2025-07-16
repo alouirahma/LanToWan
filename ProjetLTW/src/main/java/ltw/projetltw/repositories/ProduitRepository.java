@@ -6,18 +6,14 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import ltw.projetltw.entities.Produit;
-import ltw.projetltw.enums.CategorieProduit;
-
-
+import ltw.projetltw.entities.ProduitEntity;
 
 
 @Repository
-public interface ProduitRepository extends JpaRepository<Produit, Integer> {
+public interface ProduitRepository extends JpaRepository<ProduitEntity, Integer> {
 	
-	List<Produit> findByCatProd(CategorieProduit catProd);
-	List<Produit> findByNom(String nom);
-	Optional<Produit> findByRef(String ref);
-	Optional<Produit> findByBareCode(String bareCode);
-	Optional<Produit> findByNumSerie(String numSerie);
+	List<ProduitEntity> findByNom(String nom);
+	Optional<ProduitEntity> findByRef(String reference);
+	Optional<ProduitEntity> findByBareCode(String bareCode);
+	Optional<ProduitEntity> findByNumSerie(String numeroDeSerie);
 }
