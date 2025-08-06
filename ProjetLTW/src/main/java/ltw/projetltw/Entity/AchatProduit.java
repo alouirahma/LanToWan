@@ -20,7 +20,7 @@ public class AchatProduit {
     double quantite;
     double prixUnitaire;
     double remise;
-    double tva;
+    double tax;
 
 @ManyToOne(cascade = CascadeType.ALL)
     Produit produit;

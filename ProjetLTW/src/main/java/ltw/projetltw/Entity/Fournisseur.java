@@ -13,5 +13,5 @@ import lombok.Setter;
 @NoArgsConstructor
 public class Fournisseur extends Personne{
 
-String Matricule_fiscaleF;
+String matriculeFiscaleF;
 }

@@ -6,6 +6,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.Date;
+
 @Entity
 @Getter
 @Setter
@@ -20,9 +22,11 @@ public class Vente {
     String facture;
     ModePaiement modePaiment;
     Double montantTotal;
-    @Column(length = 255)
+    @Column(length =255)
     String documentPaiement;
-     Boolean dinardTimbre;
+    Boolean dinardTimbre;
+    Date dateCreation;
+    Date dateModification;
 
      @ManyToOne(cascade = CascadeType.ALL)
     Client client;

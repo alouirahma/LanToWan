@@ -1,5 +1,6 @@
 package ltw.projetltw.Entity;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -12,5 +13,6 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 public class Client extends Personne {
-    String Matricule_fiscaleC;
+    String  matriculeFiscaleC;
+    
 }

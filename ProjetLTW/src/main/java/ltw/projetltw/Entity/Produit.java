@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.Date;
 import java.util.Set;
 
 @Entity
@@ -21,13 +22,13 @@ public class Produit {
     String nom;
     Double qtePhy;
     Double qteTheo;
-    Double prixAchat;
-    Double prixVente;
+    Double prixUnitaire;
     Boolean comptable;
     String numSerie;
     CategorieProduit catProd;
     String bareCode;
     TaxProduit TaxProd;
+
 
 
 }

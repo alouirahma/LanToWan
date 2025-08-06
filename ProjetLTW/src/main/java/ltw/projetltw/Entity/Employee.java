@@ -9,8 +9,8 @@ import lombok.Setter;
 @Entity
 @Getter
 @Setter
-@AllArgsConstructor
 @NoArgsConstructor
 
-public class Emlpoyee extends Personne {
+public class Employee extends Personne {
+
 }

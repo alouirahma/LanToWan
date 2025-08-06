@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.boot.autoconfigure.web.WebProperties;
 
+import java.util.Date;
 import java.util.Set;
 
 @Entity
@@ -20,6 +21,7 @@ public class Mouvement {
     @GeneratedValue (strategy = GenerationType.IDENTITY)
     private int id;
     TypeMvmt type;
+    Date dateMvt;
 
     @ManyToMany(mappedBy = "mouvements",cascade = CascadeType.ALL)
     public Set<Personne> personnes;

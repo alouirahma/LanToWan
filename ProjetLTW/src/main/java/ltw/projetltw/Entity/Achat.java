@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.Date;
 import java.util.Set;
 
 @Entity
@@ -18,6 +19,8 @@ public class Achat {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
     String facture;
+    Date dateCreation;
+    Date dateModification;
 
      @ManyToOne(cascade = CascadeType.ALL)
     Fournisseur fournisseur;
