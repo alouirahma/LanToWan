@@ -1,8 +1,10 @@
 package ltw.projetltw.Controller;
 
+import jakarta.persistence.EntityNotFoundException;
 import lombok.AllArgsConstructor;
 import ltw.projetltw.Entity.Vente;
 import ltw.projetltw.Services.VenteService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -12,14 +14,13 @@ import java.util.List;
 @RestController
 @RequestMapping("/vente")
 public class VenteController {
-    VenteService venteService;
+    private final VenteService venteService;
 
     @GetMapping
     public List<Vente> getAllVentes() {
         return venteService.findAll();
     }
 
-    // 🔹 GET BY ID
     @GetMapping("/{id}")
     public ResponseEntity<Vente> getVenteById(@PathVariable Integer id) {
         return venteService.findById(id)
@@ -27,24 +28,31 @@ public class VenteController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // 🔹 CREATE
-    @PostMapping
-    public Vente createVente(@RequestBody Vente vente) {
-        return venteService.add(vente);
+    @PostMapping(consumes = "application/json")
+    public ResponseEntity<Vente> createVente(@RequestBody Vente vente) {
+        System.out.println("Received vente object: " + vente);
+        if (vente.getVenteProduits() == null || vente.getVenteProduits().isEmpty()) {
+            System.out.println("Aucun produit associé à la vente.");
+        }
+        Vente savedVente = venteService.add(vente, null);
+        return ResponseEntity.ok(savedVente);
     }
-
-    // 🔹 UPDATE
-    @PutMapping("/{id}")
+    @PutMapping(value = "/{id}", consumes = "application/json")
     public ResponseEntity<Vente> updateVente(@PathVariable Integer id, @RequestBody Vente vente) {
-        return venteService.update(id, vente)
+        return venteService.update(id, vente, null) // Pas de fichier pour l'instant
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // 🔹 DELETE
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteVente(@PathVariable Integer id) {
-        venteService.deleteById(id);
-        return ResponseEntity.noContent().build();
+        try {
+            venteService.deleteById(id);
+            return ResponseEntity.noContent().build();
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 }

@@ -27,7 +27,7 @@ public class Produit {
     String numSerie;
     CategorieProduit catProd;
     String bareCode;
-    TaxProduit TaxProd;
+    TaxProduit taxProd;
 
 
 

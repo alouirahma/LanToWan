@@ -44,4 +44,5 @@ public class ProduitController {
         produitService.deleteById(id);
         return ResponseEntity.noContent().build();
     }
+
 }

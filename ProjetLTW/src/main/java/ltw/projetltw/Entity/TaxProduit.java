@@ -3,7 +3,8 @@ package ltw.projetltw.Entity;
 
 public enum TaxProduit {
     TAX_19(19.0),       // 19% tax
-    TAX_7(7.0);
+    TAX_7(7.0),
+    TAX_0(0.0);
 
     private final double percentage;
 
@@ -21,5 +22,5 @@ public enum TaxProduit {
 
     public double toDecimal() {
         return percentage / 100.0;
-    }// 7% tax
+    }
 }
