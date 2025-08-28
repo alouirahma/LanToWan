@@ -39,16 +39,16 @@ function ProductForm({ initialData, onSave, onCancel }) {
     else if (formData.ref.length > 50) newErrors.ref = "La référence ne doit pas dépasser 50 caractères";
     if (!formData.nom.trim()) newErrors.nom = "Le nom du produit est requis";
     else if (formData.nom.length > 100) newErrors.nom = "Le nom ne doit pas dépasser 100 caractères";
-    if (formData.qtePhy === "" || formData.qtePhy < 0) newErrors.qtePhy = "Quantité physique invalide";
+    if (formData.qtePhy === "" || isNaN(formData.qtePhy) || formData.qtePhy < 0) newErrors.qtePhy = "Quantité physique invalide";
     else if (formData.qtePhy > 999999) newErrors.qtePhy = "Quantité physique trop grande";
-    if (formData.qteTheo === "" || formData.qteTheo < 0) newErrors.qteTheo = "Quantité théorique invalide";
+    if (formData.qteTheo === "" || isNaN(formData.qteTheo) || formData.qteTheo < 0) newErrors.qteTheo = "Quantité théorique invalide";
     else if (formData.qteTheo > 999999) newErrors.qteTheo = "Quantité théorique trop grande";
-    if (formData.prixUnitaire === "" || formData.prixUnitaire <= 0) newErrors.prixUnitaire = "Prix unitaire invalide";
+    if (formData.prixUnitaire === "" || isNaN(formData.prixUnitaire) || formData.prixUnitaire <= 0) newErrors.prixUnitaire = "Prix unitaire invalide";
     else if (formData.prixUnitaire > 999999.99) newErrors.prixUnitaire = "Prix unitaire trop élevé";
-    if (formData.taxProd === "") newErrors.taxProd = "Veuillez sélectionner une taxe";
+    if (!formData.taxProd) newErrors.taxProd = "Veuillez sélectionner une taxe";
+    if (!formData.catProd) newErrors.catProd = "Veuillez sélectionner une catégorie";
     if (formData.numSerie && formData.numSerie.length > 50) newErrors.numSerie = "Numéro de série trop long";
     if (formData.bareCode && formData.bareCode.length > 50) newErrors.bareCode = "Code-barres trop long";
-    if (formData.catProd && formData.catProd.length > 50) newErrors.catProd = "Catégorie trop longue";
     return newErrors;
   };
 
@@ -57,7 +57,7 @@ function ProductForm({ initialData, onSave, onCancel }) {
     const { name, value, type, checked } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : type === "number" ? Number(value) || "" : value.trimStart(),
+      [name]: type === "checkbox" ? checked : type === "number" ? (value === "" ? "" : Number(value)) : value.trimStart(),
     }));
     setErrors((prev) => ({ ...prev, [name]: "" }));
   };
@@ -66,6 +66,12 @@ function ProductForm({ initialData, onSave, onCancel }) {
   const handleTaxChange = (value) => {
     setFormData((prev) => ({ ...prev, taxProd: value }));
     setErrors((prev) => ({ ...prev, taxProd: "" }));
+  };
+
+  // Handle category selection
+  const handleCategoryChange = (value) => {
+    setFormData((prev) => ({ ...prev, catProd: value }));
+    setErrors((prev) => ({ ...prev, catProd: "" }));
   };
 
   // Reset form
@@ -89,27 +95,47 @@ function ProductForm({ initialData, onSave, onCancel }) {
 
     setIsSubmitting(true);
     try {
+      const productData = {
+        ref: formData.ref,
+        nom: formData.nom,
+        qtePhy: formData.qtePhy === "" ? 0 : parseFloat(formData.qtePhy),
+        qteTheo: formData.qteTheo === "" ? 0 : parseFloat(formData.qteTheo),
+        prixUnitaire: formData.prixUnitaire === "" ? 0 : parseFloat(formData.prixUnitaire),
+        comptable: formData.comptable,
+        numSerie: formData.numSerie || null,
+        bareCode: formData.bareCode || null,
+        catProd: formData.catProd || null,
+        TaxProd: formData.taxProd || null,
+      };
+      console.log("Données envoyées :", productData); // Debug
+      console.log("URL de la requête :", initialData ? `http://localhost:8081/produit/${initialData.id}` : `http://localhost:8081/produit`); // Debug
       let response;
       if (initialData) {
-        response = await axios.put(`http://localhost:8081/produit/${initialData.id}`, formData);
+        response = await axios.put(`http://localhost:8081/produit/${initialData.id}`, productData);
         toast.success("Produit modifié avec succès", { icon: <CheckCircle className="h-5 w-5 text-green-500" /> });
       } else {
-        response = await axios.post(`http://localhost:8081/produit`, formData);
+        response = await axios.post(`http://localhost:8081/produit`, productData);
         toast.success("Produit créé avec succès", { icon: <CheckCircle className="h-5 w-5 text-green-500" /> });
       }
       onSave(response.data);
     } catch (err) {
-      let errorMsg = `Erreur lors de la ${initialData ? "modification" : "création"} : ${err.response?.status} - ${err.response?.statusText}`;
-      if (err.response?.status === 405) {
-        errorMsg = "Méthode non autorisée. Vérifiez l'URL de l'endpoint.";
-      } else if (err.response?.status === 400) {
-        errorMsg = err.response.data.message || "Données invalides. Vérifiez les champs requis.";
-      } else if (err.response?.status === 500) {
-        errorMsg = err.response.data.message || "Erreur interne du serveur.";
+      let errorMsg = `Erreur lors de la ${initialData ? "modification" : "création"} : ${err.response?.status || "inconnu"} - ${err.response?.statusText || "Erreur serveur"}`;
+      if (err.code === "ERR_NETWORK") {
+        errorMsg = "Erreur réseau : impossible de se connecter au serveur. Vérifiez si le serveur est en cours d'exécution ou les paramètres CORS.";
+      } else if (err.response) {
+        if (err.response.status === 400) {
+          errorMsg = err.response.data.message || "Données invalides. Vérifiez les champs requis (catégorie, taxe, etc.).";
+        } else if (err.response.status === 404) {
+          errorMsg = "Produit non trouvé. L'ID spécifié n'existe pas.";
+        } else if (err.response.status === 405) {
+          errorMsg = "Méthode non autorisée. Vérifiez l'URL de l'endpoint.";
+        } else if (err.response.status === 500) {
+          errorMsg = err.response.data.message || "Erreur interne du serveur.";
+        }
       }
       setErrors({ general: errorMsg });
       toast.error(errorMsg, { icon: <AlertCircle className="h-5 w-5 text-red-500" /> });
-      console.error("Erreur :", err);
+      console.error("Erreur :", err.response?.data || err);
     } finally {
       setIsSubmitting(false);
     }
@@ -200,6 +226,7 @@ function ProductForm({ initialData, onSave, onCancel }) {
             placeholder="Entrer la quantité physique"
             min="0"
             max="999999"
+            step="0.01"
             className={`border-gray-300 focus:border-indigo-600 focus:ring-indigo-600 rounded-lg shadow-sm transition-all duration-200 ${
               errors.qtePhy ? "border-red-500 focus:ring-red-500" : ""
             }`}
@@ -226,6 +253,7 @@ function ProductForm({ initialData, onSave, onCancel }) {
             placeholder="Entrer la quantité théorique"
             min="0"
             max="999999"
+            step="0.01"
             className={`border-gray-300 focus:border-indigo-600 focus:ring-indigo-600 rounded-lg shadow-sm transition-all duration-200 ${
               errors.qteTheo ? "border-red-500 focus:ring-red-500" : ""
             }`}
@@ -314,21 +342,46 @@ function ProductForm({ initialData, onSave, onCancel }) {
         </div>
         <div>
           <label htmlFor="catProd" className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-            <Layers className="h-5 w-5 text-gray-500" /> Catégorie
+            <Layers className="h-5 w-5 text-gray-500" /> Catégorie *
           </label>
-          <Input
-            id="catProd"
-            name="catProd"
-            value={formData.catProd}
-            onChange={handleChange}
-            placeholder="Entrer la catégorie"
-            className={`border-gray-300 focus:border-indigo-600 focus:ring-indigo-600 rounded-lg shadow-sm transition-all duration-200 ${
-              errors.catProd ? "border-red-500 focus:ring-red-500" : ""
-            }`}
-            disabled={isSubmitting}
-            aria-invalid={!!errors.catProd}
-            aria-describedby={errors.catProd ? "catProd-error" : undefined}
-          />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                className={`w-full justify-between border-gray-300 hover:bg-gray-50 focus:border-indigo-600 focus:ring-indigo-600 rounded-lg shadow-sm transition-all duration-200 ${
+                  errors.catProd ? "border-red-500 focus:ring-red-500" : ""
+                }`}
+                disabled={isSubmitting}
+                aria-invalid={!!errors.catProd}
+                aria-describedby={errors.catProd ? "catProd-error" : undefined}
+              >
+                {formData.catProd ? formData.catProd : "Sélectionner une catégorie"}
+                <ChevronDown className="ml-2 h-5 w-5 text-gray-500" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-full bg-white shadow-lg rounded-lg border border-gray-200">
+              <DropdownMenuLabel className="text-gray-700 font-medium">Choisir une catégorie</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => handleCategoryChange("caméra")}
+                className="hover:bg-indigo-50 text-gray-700 cursor-pointer py-2.5 font-medium"
+              >
+                Caméra
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => handleCategoryChange("fibre")}
+                className="hover:bg-indigo-50 text-gray-700 cursor-pointer py-2.5 font-medium"
+              >
+                Fibre
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => handleCategoryChange("équipement_informatique")}
+                className="hover:bg-indigo-50 text-gray-700 cursor-pointer py-2.5 font-medium"
+              >
+                Équipement informatique
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           {errors.catProd && (
             <p id="catProd-error" className="mt-1 text-sm text-red-600 flex items-center gap-1">
               <AlertCircle className="h-4 w-4" /> {errors.catProd}
@@ -368,12 +421,6 @@ function ProductForm({ initialData, onSave, onCancel }) {
                 className="hover:bg-indigo-50 text-gray-700 cursor-pointer py-2.5 font-medium"
               >
                 7%
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => handleTaxChange("")}
-                className="hover:bg-indigo-50 text-gray-700 cursor-pointer py-2.5 font-medium"
-              >
-                Aucune
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

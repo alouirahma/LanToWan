@@ -1,276 +1,275 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { toast } from "react-toastify";
 import axios from "axios";
-import { ChevronDown, Tag, FileText, Package, DollarSign, Hash, Layers, BarChart, AlertCircle } from "lucide-react";
 
-function ProductForm({ initialData, onSave, onCancel }) {
+function PersonForm({ type, initialData, onSave, onCancel }) {
   const [formData, setFormData] = useState(
     initialData || {
-      ref: "",
       nom: "",
-      qtePhy: "",
-      qteTheo: "",
-      prixUnitaire: "",
-      comptable: false,
-      numSerie: "",
-      bareCode: "",
-      catProd: "",
-      taxProd: "",
+      adresse: "",
+      email: "",
+      telephone: "",
+      matriculeFiscaleF: "",
+      matriculeFiscaleC: "",
     }
   );
-  const [error, setError] = useState(null);
+  const [errors, setErrors] = useState({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [isFormValid, setIsFormValid] = useState(false);
 
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData({
-      ...formData,
-      [name]:
-        type === "checkbox"
-          ? checked
-          : type === "number"
-          ? Number(value) || ""
-          : value,
-    });
+  const validateForm = () => {
+    const newErrors = {};
+    let isValid = true;
+
+    if (!formData.nom.trim()) {
+      newErrors.nom = "Le nom est requis";
+      isValid = false;
+    }
+    if (!formData.adresse.trim()) {
+      newErrors.adresse = "L'adresse est requise";
+      isValid = false;
+    }
+    if (!formData.email.trim()) {
+      newErrors.email = "L'email est requis";
+      isValid = false;
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = "Format d'email invalide";
+      isValid = false;
+    }
+    if (!formData.telephone.trim()) {
+      newErrors.telephone = "Le numéro de téléphone est requis";
+      isValid = false;
+    } else if (!/^\+?[\d\s-]{8,}$/.test(formData.telephone)) {
+      newErrors.telephone = "Numéro de téléphone invalide";
+      isValid = false;
+    }
+    if (type === "fournisseurs" && !formData.matriculeFiscaleF.trim()) {
+      newErrors.matriculeFiscaleF = "Le matricule fiscal est requis pour les fournisseurs";
+      isValid = false;
+    }
+    if (type === "clients" && !formData.matriculeFiscaleC.trim()) {
+      newErrors.matriculeFiscaleC = "Le matricule fiscal est requis pour les clients";
+      isValid = false;
+    }
+
+    setErrors(newErrors);
+    return isValid;
   };
 
-  const handleTaxChange = (value) => {
-    setFormData({ ...formData, taxProd: value });
+  useEffect(() => {
+    setIsFormValid(validateForm());
+  }, [formData, type]);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+    setErrors({ ...errors, [name]: null });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!validateForm()) {
+      toast.error("Veuillez remplir tous les champs requis correctement");
+      return;
+    }
+    setIsLoading(true);
     try {
+      const typeUrlMap = {
+        clients: "clients",
+        fournisseurs: "fournisseurs",
+        employes: "employees",
+      };
+      const typePath = typeUrlMap[type] || "clients";
+      const personData = {
+        ...formData,
+        matriculeFiscale: formData.matriculeFiscaleF || formData.matriculeFiscaleC || null,
+      };
       let response;
+      console.log("Données envoyées :", personData); // Debug
+      console.log("URL de la requête :", initialData ? `http://localhost:8081/personne/${typePath}/${initialData.id}` : `http://localhost:8081/personne/${typePath}`); // Debug
       if (initialData) {
         response = await axios.put(
-          `http://localhost:8081/produit/${initialData.id}`,
-          formData
+          `http://localhost:8081/personne/${typePath}/${initialData.id}`,
+          personData
         );
-        toast.success("Produit modifié avec succès");
+        toast.success("Personne modifiée avec succès");
       } else {
-        response = await axios.post(`http://localhost:8081/produit`, formData);
-        toast.success("Produit créé avec succès");
+        response = await axios.post(
+          `http://localhost:8081/personne/${typePath}`,
+          personData
+        );
+        toast.success("Personne créée avec succès");
       }
       onSave(response.data);
     } catch (err) {
-      let errorMsg = `Erreur lors de la ${initialData ? "modification" : "création"} : ${err.response?.status} - ${err.response?.statusText}`;
-      if (err.response?.status === 405) {
-        errorMsg = "Méthode non autorisée. Vérifiez l'URL de l'endpoint.";
-      } else if (err.response?.status === 400) {
-        errorMsg = err.response.data.message || "Données invalides. Vérifiez les champs requis.";
-      } else if (err.response?.status === 500) {
-        errorMsg = err.response.data.message || "Erreur interne du serveur.";
+      let errorMsg = "Erreur lors de la sauvegarde";
+      if (err.code === "ERR_NETWORK") {
+        errorMsg = "Erreur réseau : impossible de se connecter au serveur. Vérifiez si le serveur est en cours d'exécution ou les paramètres CORS.";
+      } else if (err.response) {
+        if (err.response.status === 405) {
+          errorMsg = "Méthode non autorisée. Vérifiez l'URL de l'endpoint.";
+        } else if (err.response.status === 400) {
+          errorMsg = err.response.data.message || "Données invalides.";
+        } else if (err.response.status === 500) {
+          errorMsg = err.response.data.message || "Erreur interne du serveur.";
+        } else {
+          errorMsg = `Erreur ${err.response.status} : ${err.response.statusText || "Erreur serveur"}`;
+        }
       }
-      setError(errorMsg);
+      setErrors({ global: errorMsg });
       toast.error(errorMsg);
-      console.error("Erreur création :", err);
+      console.error("Erreur:", err.response?.data || err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 p-6 bg-white rounded-lg shadow-md">
-      <h2 className="text-xl font-semibold text-gray-800">
-        {initialData ? "Modifier le produit" : "Ajouter un produit"}
+    <div className="max-w-2xl mx-auto p-6 bg-white shadow-lg rounded-lg">
+      <h2 className="text-2xl font-semibold mb-6 text-gray-800">
+        {initialData ? "Modifier" : "Ajouter"} {type === "clients" ? "Client" : type === "fournisseurs" ? "Fournisseur" : "Employé"}
       </h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <label htmlFor="ref" className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
-            <Tag className="h-4 w-4 text-gray-500" /> Référence
-          </label>
-          <Input
-            id="ref"
-            name="ref"
-            value={formData.ref}
-            onChange={handleChange}
-            placeholder="Entrer la référence"
-            required
-            className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 rounded-md shadow-sm"
-          />
-        </div>
-        <div>
-          <label htmlFor="nom" className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
-            <FileText className="h-4 w-4 text-gray-500" /> Nom du produit
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="col-span-1">
+          <label htmlFor="nom" className="block text-sm font-medium text-gray-700 mb-1">
+            Nom *
           </label>
           <Input
             id="nom"
             name="nom"
             value={formData.nom}
             onChange={handleChange}
-            placeholder="Entrer le nom"
+            placeholder="Entrez le nom"
+            className="w-full"
             required
-            className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 rounded-md shadow-sm"
+            aria-invalid={errors.nom ? "true" : "false"}
+            aria-describedby={errors.nom ? "nom-error" : undefined}
           />
+          {errors.nom && (
+            <p id="nom-error" className="text-red-500 text-sm mt-1">{errors.nom}</p>
+          )}
         </div>
-        <div>
-          <label htmlFor="qtePhy" className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
-            <Package className="h-4 w-4 text-gray-500" /> Quantité physique
+        <div className="col-span-1">
+          <label htmlFor="adresse" className="block text-sm font-medium text-gray-700 mb-1">
+            Adresse *
           </label>
           <Input
-            id="qtePhy"
-            name="qtePhy"
-            type="number"
-            value={formData.qtePhy}
+            id="adresse"
+            name="adresse"
+            value={formData.adresse}
             onChange={handleChange}
-            placeholder="Entrer la quantité physique"
+            placeholder="Entrez l'adresse"
+            className="w-full"
             required
-            className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 rounded-md shadow-sm"
+            aria-invalid={errors.adresse ? "true" : "false"}
+            aria-describedby={errors.adresse ? "adresse-error" : undefined}
           />
+          {errors.adresse && (
+            <p id="adresse-error" className="text-red-500 text-sm mt-1">{errors.adresse}</p>
+          )}
         </div>
-        <div>
-          <label htmlFor="qteTheo" className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
-            <Package className="h-4 w-4 text-gray-500" /> Quantité théorique
+        <div className="col-span-1">
+          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+            Email *
           </label>
           <Input
-            id="qteTheo"
-            name="qteTheo"
-            type="number"
-            value={formData.qteTheo}
+            id="email"
+            name="email"
+            type="email"
+            value={formData.email}
             onChange={handleChange}
-            placeholder="Entrer la quantité théorique"
+            placeholder="Entrez l'email"
+            className="w-full"
             required
-            className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 rounded-md shadow-sm"
+            aria-invalid={errors.email ? "true" : "false"}
+            aria-describedby={errors.email ? "email-error" : undefined}
           />
+          {errors.email && (
+            <p id="email-error" className="text-red-500 text-sm mt-1">{errors.email}</p>
+          )}
         </div>
-        <div>
-          <label htmlFor="prixUnitaire" className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
-            <DollarSign className="h-4 w-4 text-gray-500" /> Prix unitaire
+        <div className="col-span-1">
+          <label htmlFor="telephone" className="block text-sm font-medium text-gray-700 mb-1">
+            Téléphone *
           </label>
           <Input
-            id="prixUnitaire"
-            name="prixUnitaire"
-            type="number"
-            value={formData.prixUnitaire}
+            id="telephone"
+            name="telephone"
+            value={formData.telephone}
             onChange={handleChange}
-            placeholder="Entrer le prix unitaire"
-            step="0.01"
+            placeholder="Entrez le numéro de téléphone"
+            className="w-full"
             required
-            className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 rounded-md shadow-sm"
+            aria-invalid={errors.telephone ? "true" : "false"}
+            aria-describedby={errors.telephone ? "telephone-error" : undefined}
           />
+          {errors.telephone && (
+            <p id="telephone-error" className="text-red-500 text-sm mt-1">{errors.telephone}</p>
+          )}
         </div>
-        <div>
-          <label htmlFor="numSerie" className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
-            <Hash className="h-4 w-4 text-gray-500" /> Numéro de série
-          </label>
-          <Input
-            id="numSerie"
-            name="numSerie"
-            value={formData.numSerie}
-            onChange={handleChange}
-            placeholder="Entrer le numéro de série"
-            className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 rounded-md shadow-sm"
-          />
+        {(type === "fournisseurs" || type === "clients") && (
+          <div className="col-span-1">
+            <label
+              htmlFor={type === "fournisseurs" ? "matriculeFiscaleF" : "matriculeFiscaleC"}
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Matricule Fiscal *
+            </label>
+            <Input
+              id={type === "fournisseurs" ? "matriculeFiscaleF" : "matriculeFiscaleC"}
+              name={type === "fournisseurs" ? "matriculeFiscaleF" : "matriculeFiscaleC"}
+              value={type === "fournisseurs" ? formData.matriculeFiscaleF : formData.matriculeFiscaleC}
+              onChange={handleChange}
+              placeholder="Entrez le matricule fiscal"
+              className="w-full"
+              required
+              aria-invalid={
+                type === "fournisseurs"
+                  ? errors.matriculeFiscaleF ? "true" : "false"
+                  : errors.matriculeFiscaleC ? "true" : "false"
+              }
+              aria-describedby={
+                type === "fournisseurs"
+                  ? errors.matriculeFiscaleF ? "matriculeFiscaleF-error" : undefined
+                  : errors.matriculeFiscaleC ? "matriculeFiscaleC-error" : undefined
+              }
+            />
+            {type === "fournisseurs" && errors.matriculeFiscaleF && (
+              <p id="matriculeFiscaleF-error" className="text-red-500 text-sm mt-1">
+                {errors.matriculeFiscaleF}
+              </p>
+            )}
+            {type === "clients" && errors.matriculeFiscaleC && (
+              <p id="matriculeFiscaleC-error" className="text-red-500 text-sm mt-1">
+                {errors.matriculeFiscaleC}
+              </p>
+            )}
+          </div>
+        )}
+        {errors.global && (
+          <div className="col-span-2 text-red-500 text-sm">{errors.global}</div>
+        )}
+        <div className="col-span-2 flex gap-4 mt-4">
+          <Button
+            type="submit"
+            disabled={isLoading || !isFormValid}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md disabled:opacity-50"
+          >
+            {isLoading ? "Enregistrement..." : "Enregistrer"}
+          </Button>
+          <Button
+            type="button"
+            onClick={onCancel}
+            className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-md"
+          >
+            Annuler
+          </Button>
         </div>
-        <div>
-          <label htmlFor="bareCode" className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
-            <BarChart className="h-4 w-4 text-gray-500" /> Code-barres
-          </label>
-          <Input
-            id="bareCode"
-            name="bareCode"
-            value={formData.bareCode}
-            onChange={handleChange}
-            placeholder="Entrer le code-barres"
-            className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 rounded-md shadow-sm"
-          />
-        </div>
-        <div>
-          <label htmlFor="catProd" className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
-            <Layers className="h-4 w-4 text-gray-500" /> Catégorie
-          </label>
-          <Input
-            id="catProd"
-            name="catProd"
-            value={formData.catProd}
-            onChange={handleChange}
-            placeholder="Entrer la catégorie"
-            className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 rounded-md shadow-sm"
-          />
-        </div>
-        <div>
-          <label htmlFor="taxProd" className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
-            <DollarSign className="h-4 w-4 text-gray-500" /> Taxe
-          </label>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                className="w-full justify-between border-gray-300 hover:bg-gray-50 focus:border-blue-500 focus:ring-blue-500 rounded-md shadow-sm"
-              >
-                {formData.taxProd ? (formData.taxProd === "TAX_19" ? "19%" : "7%") : "Sélectionner une taxe"}
-                <ChevronDown className="ml-2 h-4 w-4 text-gray-500" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-full bg-white shadow-lg rounded-md">
-              <DropdownMenuLabel className="text-gray-700">Choisir une taxe</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() => handleTaxChange("TAX_19")}
-                className="hover:bg-blue-50 text-gray-700 cursor-pointer"
-              >
-                19%
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => handleTaxChange("TAX_7")}
-                className="hover:bg-blue-50 text-gray-700 cursor-pointer"
-              >
-                7%
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => handleTaxChange("")}
-                className="hover:bg-blue-50 text-gray-700 cursor-pointer"
-              >
-                Aucune
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-        <div className="flex items-center gap-2">
-          <label htmlFor="comptable" className="block text-sm font-medium text-gray-700 flex items-center gap-2">
-            <FileText className="h-4 w-4 text-gray-500" /> Comptable
-          </label>
-          <Checkbox
-            id="comptable"
-            name="comptable"
-            checked={formData.comptable}
-            onCheckedChange={(checked) => setFormData({ ...formData, comptable: checked })}
-            className="border-gray-300 focus:ring-blue-500"
-          />
-        </div>
-      </div>
-      {error && (
-        <div className="flex items-center gap-2 text-red-600 bg-red-50 p-3 rounded-md">
-          <AlertCircle className="h-5 w-5" />
-          <span>{error}</span>
-        </div>
-      )}
-      <div className="flex gap-4 justify-end">
-        <Button
-          type="submit"
-          className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2 rounded-md shadow-sm"
-        >
-          Enregistrer
-        </Button>
-        <Button
-          type="button"
-          onClick={onCancel}
-          className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium px-6 py-2 rounded-md shadow-sm"
-        >
-          Annuler
-        </Button>
-      </div>
-    </form>
+      </form>
+    </div>
   );
 }
 
-export default ProductForm;
+export default PersonForm;

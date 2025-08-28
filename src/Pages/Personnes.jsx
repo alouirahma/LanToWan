@@ -1,4 +1,3 @@
-
 import * as React from "react";
 import { useState, useEffect } from "react";
 import axios from "axios";
@@ -8,7 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, Download, Edit, Trash2 } from "lucide-react";
+import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+
 function Personnes() {
   const [personnes, setPersonnes] = useState([]);
   const [selectedType, setSelectedType] = useState("all");
@@ -42,8 +43,9 @@ function Personnes() {
       })
       .catch((err) => {
         setError("Erreur lors du chargement des personnes");
+        toast.error("Erreur lors du chargement des personnes");
+        console.error("Erreur chargement :", err);
         setLoading(false);
-        console.error(err);
       });
   }, []);
 
@@ -56,7 +58,7 @@ function Personnes() {
 
   const exportToCSV = () => {
     const today = new Date();
-    const formattedDate = today.toISOString().split("T")[0]; 
+    const formattedDate = today.toISOString().split("T")[0];
     const fileName = `liste des personnes_${formattedDate}.csv`;
     const headers = ["Nom", "Adresse", "Email", "Téléphone", "Matricule Fiscal", "Type"];
     const rows = filteredPersonnes.map((person) => [
@@ -97,10 +99,9 @@ function Personnes() {
         employes: "employees",
       };
       const baseUrl = "http://localhost:8081/personne";
-      const typePath = typeUrlMap[selectedType] || "client";
+      const typePath = typeUrlMap[selectedType] || "clients";
 
       if (selectedPerson) {
-        // Modification
         response = await axios.put(
           `${baseUrl}/${typePath}/${updatedPerson.id}`,
           personData
@@ -110,17 +111,25 @@ function Personnes() {
             p.id === updatedPerson.id ? { ...response.data, type: selectedType } : p
           )
         );
+        toast.success("Personne modifiée avec succès");
       } else {
-        // Ajout
         response = await axios.post(`${baseUrl}/${typePath}`, personData);
         setPersonnes([...personnes, { ...response.data, type: selectedType }]);
+        toast.success("Personne ajoutée avec succès");
       }
 
       setIsDialogOpen(false);
       setSelectedType("all");
       setSelectedPerson(null);
     } catch (err) {
-      setError(`Erreur lors de la sauvegarde : ${err.response?.status} - ${err.response?.statusText}`);
+      let errorMsg = "Erreur lors de la sauvegarde";
+      if (err.code === "ERR_NETWORK") {
+        errorMsg = "Erreur réseau : impossible de se connecter au serveur. Vérifiez si le serveur est en cours d'exécution ou les paramètres CORS.";
+      } else if (err.response) {
+        errorMsg = `Erreur ${err.response.status} : ${err.response.statusText || "Erreur serveur"}`;
+      }
+      setError(errorMsg);
+      toast.error(errorMsg);
       console.error("Erreur sauvegarde :", err.response?.data || err);
     }
   };
@@ -132,20 +141,30 @@ function Personnes() {
   };
 
   const handleDelete = async (id, type) => {
-  try {
-    const typeUrlMap = {
-      clients: "clients", 
-      fournisseurs: "fournisseurs", 
-      employes: "employees",
-    };
-    const typePath = typeUrlMap[type] || "client";
-    await axios.delete(`http://localhost:8081/personne/${typePath}/${id}`);
-    setPersonnes(personnes.filter((p) => p.id !== id));
-  } catch (err) {
-    setError(`Erreur lors de la suppression : ${err.response?.status} - ${err.response?.statusText}`);
-    console.error("Erreur suppression :", err.response?.data || err);
-  }
-};
+    try {
+      const typeUrlMap = {
+        clients: "clients",
+        fournisseurs: "fournisseurs",
+        employes: "employees",
+      };
+      const typePath = typeUrlMap[type] || "clients";
+      const url = `http://localhost:8081/personne/${typePath}/${id}`;
+      console.log("Tentative de suppression :", url); // Debug
+      await axios.delete(url);
+      setPersonnes(personnes.filter((p) => p.id !== id));
+      toast.success("Personne supprimée avec succès");
+    } catch (err) {
+      let errorMsg = "Erreur lors de la suppression";
+      if (err.code === "ERR_NETWORK") {
+        errorMsg = "Erreur réseau : impossible de se connecter au serveur. Vérifiez si le serveur est en cours d'exécution ou les paramètres CORS.";
+      } else if (err.response) {
+        errorMsg = `Erreur ${err.response.status} : ${err.response.statusText || "Erreur serveur"}`;
+      }
+      setError(errorMsg);
+      toast.error(errorMsg);
+      console.error("Erreur suppression :", err.response?.data || err);
+    }
+  };
 
   if (loading) return <div>Chargement...</div>;
   if (error) return <div>{error}</div>;
@@ -154,14 +173,12 @@ function Personnes() {
     <div className="container-fluid p-4">
       <h1 className="h3 mb-4 text-gray-800">Gestion des Personnes</h1>
 
-      {/* Menu de navigation */}
       <NavigationMenu
         options={navOptions}
         selectedOption={selectedType}
         onSelect={(value) => setSelectedType(value)}
       />
 
-      {/* Boutons d'action et filtrage */}
       <div className="flex items-center gap-4 mb-6">
         <Dialog
           open={isDialogOpen}
@@ -208,7 +225,6 @@ function Personnes() {
         />
       </div>
 
-      {/* Tableau */}
       <div className="overflow-x-auto">
         <table className="table table-striped w-full">
           <thead>

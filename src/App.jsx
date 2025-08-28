@@ -10,6 +10,7 @@ import Ventes from "./Pages/Ventes.jsx";
 import Mouvement from "./Pages/Mouvement.jsx";
 import Produit from "./Pages/Produit.jsx";
 import Personnes from "./Pages/Personnes.jsx";
+import VenteDetailPage from "./Pages/Ventes/VenteDetailPage.jsx";
 
 // Composant pour le tableau de bord
 function Dashboard() {
@@ -165,16 +166,19 @@ function Dashboard() {
 }
 
 function App() {
+  console.log("Rendering App");
   return (
     <Router>
       <Layout>
-        <Routes> <Route path="/dashboard" element={<Dashboard />} />
+        <Routes> 
+          <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/achat" element={<Achats />} />
           <Route path="/vente" element={<Ventes />} />
+           <Route path="/vente/nouveau" element={<VenteDetailPage />} />
           <Route path="/mouvement" element={<Mouvement />} />
           <Route path="/produit" element={<Produit />} />
           <Route path="/personnes" element={<Personnes />} />
-
+          <Route path="/*" element={<Dashboard />} />
         </Routes>
       </Layout>
     </Router>

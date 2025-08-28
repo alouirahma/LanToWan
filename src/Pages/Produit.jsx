@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
@@ -34,13 +33,13 @@ function Produit() {
     (produit.nom || "").toLowerCase().includes(filter.toLowerCase())
   );
 
-  const getTaxLabel = (taxProd) => {
-    if (!taxProd) return '-';
+  const getTaxLabel = (TaxProd) => {
+    if (!TaxProd) return '-';
     const taxMap = {
       TAX_19: '19%',
       TAX_7: '7%',
     };
-    return taxMap[taxProd] || taxProd;
+    return taxMap[TaxProd] || TaxProd;
   };
 
   const exportToCSV = () => {
@@ -70,7 +69,7 @@ function Produit() {
       `"${produit.numSerie || '-'}"`,
       `"${produit.bareCode || '-'}"`,
       `"${produit.catProd || '-'}"`,
-      `"${getTaxLabel(produit.taxProd)}"`,
+      `"${getTaxLabel(produit.TaxProd)}"`,
     ]);
     const csvContent = [headers, ...rows].join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
@@ -79,7 +78,11 @@ function Produit() {
     link.download = fileName;
     link.click();
   };
-
+ const categories = [
+    { label: "Caméra", value: "caméra" },
+    { label: "Fibre", value: "fibre" },
+    { label: "Équipement Informatique", value: "équipement_informatique" },
+  ];
   const handleAdd = () => {
     setSelectedProduit(null);
     setIsDialogOpen(true);
@@ -124,23 +127,30 @@ function Produit() {
     setSelectedProduit(null);
   };
 
-  const handleDelete = async (id) => {
+    const handleDelete = async (id) => {
     try {
+      console.log("Tentative de suppression :", `http://localhost:8081/produit/${id}`); // Debug
       await axios.delete(`http://localhost:8081/produit/${id}`);
       setProduits(produits.filter((p) => p.id !== id));
       toast.success("Produit supprimé avec succès");
     } catch (err) {
-      let errorMsg = `Erreur lors de la suppression : ${err.response?.status} - ${err.response?.statusText}`;
-      if (err.response?.status === 404) {
-        errorMsg = "Le produit n'existe pas.";
-      } else if (err.response?.status === 409) {
-        errorMsg = err.response.data.message || "Impossible de supprimer : le produit est associé à des ventes.";
-      } else if (err.response?.status === 500) {
-        errorMsg = err.response.data.message || "Erreur interne du serveur.";
+      let errorMsg = "Erreur lors de la suppression du produit";
+      if (err.code === "ERR_NETWORK") {
+        errorMsg = "Erreur réseau : impossible de se connecter au serveur. Vérifiez si le serveur est en cours d'exécution ou les paramètres CORS.";
+      } else if (err.response) {
+        if (err.response.status === 404) {
+          errorMsg = "Produit non trouvé. L'ID spécifié n'existe pas.";
+        } else if (err.response.status === 400) {
+          errorMsg = err.response.data.message || "Requête invalide.";
+        } else if (err.response.status === 500) {
+          errorMsg = err.response.data.message || "Erreur interne du serveur, possiblement due à une contrainte de clé étrangère.";
+        } else {
+          errorMsg = `Erreur ${err.response.status} : ${err.response.statusText || "Erreur serveur"}`;
+        }
       }
       setError(errorMsg);
       toast.error(errorMsg);
-      console.error("Erreur suppression :", err);
+      console.error("Erreur suppression :", err.response?.data || err);
     }
   };
 
@@ -167,7 +177,7 @@ function Produit() {
               Ajouter
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
+          <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
             <ProductForm
               initialData={selectedProduit}
               onSave={handleSave}
@@ -195,7 +205,7 @@ function Produit() {
             <tr className="bg-gray-100 text-gray-800">
               <th className="px-4 py-2">Référence</th>
               <th className="px-4 py-2">Nom</th>
-             <th className="px-4 py-2">Numéro de série</th>
+              <th className="px-4 py-2">Numéro de série</th>
               <th className="px-4 py-2">Qté Physique</th>
               <th className="px-4 py-2">Qté Théorique</th>
               <th className="px-4 py-2">Prix Unitaire</th>
@@ -215,8 +225,8 @@ function Produit() {
                 <td className="px-4 py-2">{produit.qteTheo || '-'}</td>
                 <td className="px-4 py-2">{produit.prixUnitaire || '-'}</td>
                 <td className="px-4 py-2">{produit.comptable ? "Oui" : "Non"}</td>
-                <td className="px-4 py-2">{getTaxLabel(produit.taxProd)}</td>
-                 <td className="px-4 py-2">{produit.catProd || '-'}</td>
+                <td className="px-4 py-2">{getTaxLabel(produit.TaxProd)}</td>
+                <td className="px-4 py-2">{produit.catProd || '-'}</td>
                 <td className="px-4 py-2 flex gap-2">
                   <Button
                     variant="outline"
